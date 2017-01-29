@@ -1,18 +1,18 @@
-package.path = '/global/homes/s/srijitp/build/qlua-build-KNL-2017/build2/parts/qlua/tree/lhpc/?.qlua;/global/homes/s/srijitp/build/qlua-build-KNL-2017/build2/parts/qlua/tree/qlib/?.qlua;' .. package.path
+package.path = '/global/homes/s/srijitp/spaul/build2/parts/qlua/tree/lhpc/?.qlua;/global/homes/s/srijitp/spaul/build2/parts/qlua/tree/qlib/?.qlua;' .. package.path
 require "stdlib"
 require "setup_util"
 require "gauge"
 require "lhpc-std"
 require "qdpc_io"
 require "latvec"
-require "ape-smear"
-require "wuppertal-smear"
-require "hex-smear"
 
 -- Dimensions
-dims = {32, 32, 32, 48}
+dims = {48, 48, 48, 96}
 -- Lattice init
 L = qcd.lattice(dims) 
+
+
+
 
 block ={6.0, 6.0, 6.0, 4}
 block_1 ={2, 2, 2, 4}
@@ -33,23 +33,22 @@ function vec_div(a,b)
    return r;
 end
 
---nconf = 1800
+nconf = 1700
 --conf_name = "/global/project/projectdirs/mp133/koutsou/cl21_32_96_b6p1_m0p2850_m0p2450_cfg_1424_Stout_smeared.nersc"
-conf_name = "/global/cscratch1/sd/smeinel/BMW/beta3.31_2hex_32c48_ml-0.09530_mh-0.04/lat_130113_151609.nersc"
 -- read configuration
---printf("Starting to read config.\n")
---conf_name_prefix = "/global/cscratch1/sd/smeinel/clover-iso/cl21_48_96_b6p3_m0p2416_m0p2050/cfgs/cl21_48_96_b6p3_m0p2416_m0p2050_cfg_"
---conf_suffix = ".lime"
---conf_name = string.format("%s%d%s", conf_name_prefix, nconf, conf_suffix)
---uorig, msg = qcd.nersc.read_gauge(L, conf_name)
-uorig = load_nersc(L, conf_name)
---stout_rho = 0.125
---stout_n   = 1
+printf("Starting to read config.\n")
+conf_name_prefix = "/global/cscratch1/sd/smeinel/clover-iso/cl21_48_96_b6p3_m0p2416_m0p2050/cfgs/cl21_48_96_b6p3_m0p2416_m0p2050_cfg_"
+conf_suffix = ".lime"
+conf_name = string.format("%s%d%s", conf_name_prefix, nconf, conf_suffix)
+--u, msg = qcd.nersc.read_gauge(L, conf_name)
+uorig = load_ildg(L, conf_name)
+stout_rho = 0.125
+stout_n   = 1
 
---u = stout_smear_4d(uorig, stout_rho, stout_n)
-u = bmw_hex(uorig, 2)
+u = stout_smear_4d(uorig, stout_rho, stout_n)
+
 -- Print plaquette
---printf(" Plaquette = %12.10f\n", plaquette_full(u))
+printf(" Plaquette = %12.10f\n", plaquette_full(u))
 
 -- timer
 function timer(name)
@@ -62,15 +61,15 @@ end
 
 -- quark action
 ferm_bc = {1,1,1,-1}
-m_l = -0.09530
-m_s = -0.0400
-c_sw = 1.0
+m_l     = -0.2416
+m_s     = -0.2050
 kappa_l = 1. / (8 + 2 * m_l)
 
 -- Kappa - the bare mass
 kappa =  kappa_l
 
 -- c_sw - the clover parameter
+c_sw = 1.20536588031793
 
 -------------------------------------------------------------------------------
 lattice_1 = vec_div(dims,block)
@@ -93,7 +92,7 @@ lattice_2 = vec_div(lattice_1,block_1)
          max_restarts =5,
          evenodd = "evenodd" -- or "odd" or "even"
       },
-      -- boundary conditions Periodic
+      -- boundary conditions Antiperiodic
       action = { -- should be together with kappas, but it's not how it is done in examples
         boundary = ferm_bc,
         kappa = kappa,
@@ -104,7 +103,7 @@ lattice_2 = vec_div(lattice_1,block_1)
         -- nlevels = 2,    
          -- nc is U[1]:colors()
          verbose = -2,
-         profile = 1,
+         profile = -2,
          kappa = kappa,
          kappanv = kappa,
          itmax = 5000,
@@ -128,9 +127,9 @@ lattice_2 = vec_div(lattice_1,block_1)
         },
          { lattice = lattice_2,
            -- verbose
-           nvecs = 30,
+           nvecs = 24,
            npre =  0,
-           npost =  3,
+           npost =  4,
            scale = 1,
            cres = 0.2,
            itmax = 50,
@@ -281,41 +280,16 @@ x = 0
 y = 0
 z = 0
 t = 0
-
-wup_alpha = 3.0
-wup_n = 30
-
-ape_alpha = 2.5
-ape_n = 25
-
-ape_accu    = 1e-16
-ape_maxiter = 250
-ape_orthdir = 3
-
-uape = APE_smear(u, ape_alpha, ape_n, ape_accu, ape_maxiter, ape_orthdir)
-local src = L:DiracPropagator()
-for icol  = 0, 2 do
-
-      for ispin = 0, 3 do
-
-
-        local dv  = L:DiracFermion()
-        dv[{x,y,z,t, c=icol, d=ispin}] = complex(1, 0)
-        src[{c=icol,d=ispin}] = wuppertal_smear(uape, wup_alpha, wup_n, dv, 3)
-
-        end
-
-end
-
-
 for sp = 0, qcd.Ns-1 do
    for col = 0, 3-1 do
       
 
+      	local  src = L:DiracFermion()
+      	src[{x, y, z, t, c=col, d=sp}] = complex(1, 0)
   
       	printf("-------------------- applying the MG solver -----\n");
   	local t0 = os.time()
-  	G = mg:solve(src[{c=col, d=sp}]);
+  	G = mg:solve(src);
         local t1 = os.time()
    	printf("TIME(clover solver)= %.6f seconds\n", t1 - t0)
 
@@ -327,10 +301,10 @@ for sp = 0, qcd.Ns-1 do
  	-- t0("done")
 
   	local test_src_ref = wilson_dslash_ref(2*kappa*G)
-  	print_latvec_cmp(src[{c=col, d=sp}], test_src_ref, "x <->DslashRef(MGsolver(x))")
+  	print_latvec_cmp(src, test_src_ref, "x <->DslashRef(MGsolver(x))")
   	nr2 = (G):norm2();
-  	gf2 = (test_src_ref - src[{c=col, d=sp}]):norm2();
-  	f2 = src[{c=col, d=sp}]:norm2();
+  	gf2 = (test_src_ref - src):norm2();
+  	f2 = src:norm2();
   	delta = gf2 / f2;
   	--printf("WMG error\n");
   	printf("   |G|       = %g\n", nr2);
@@ -344,6 +318,7 @@ for sp = 0, qcd.Ns-1 do
   	end
 
    	k_prop[{d=sp, c=col}] = G
+   	src = nil
    end 
 end
 printf(" Average time per inversion = %g\n",t_avg/12);
