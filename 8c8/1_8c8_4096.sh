@@ -3,9 +3,9 @@
 
 #SBATCH -p debug
 #SBATCH -N 128
-#SBATCH -C haswell
+#SBATCH -C knl,quad,cache
 #SBATCH -t 30:00
-#SBATCH -J 4096_8c8_haswell_mg 
+#SBATCH -J 4096_8c8_knl_mg 
 #SBATCH -o 1_8c8_4096.out 
 #SBATCH -e 1_8c8_4096.err 
 
