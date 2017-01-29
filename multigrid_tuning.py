@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[222]:
+# In[1]:
 
 import numpy as np
 import sys
@@ -12,7 +12,7 @@ import os
 import subprocess
 
 
-# In[247]:
+# In[2]:
 
 def primes(n):
     primfac = []
@@ -71,14 +71,14 @@ def sorted_k_partitions(seq, k):
 
 
 
-# In[248]:
+# In[3]:
 
 #Lattice size patameters
-L = 64
-T = 128
+L = 32
+T = 48
 
 
-# In[249]:
+# In[4]:
 
 prime_factors_L = primes(L)
 prime_factors_T = primes(T)
@@ -88,7 +88,7 @@ print(num_prime_factors_L)
 print(num_prime_factors_T)
 
 
-# In[258]:
+# In[10]:
 
 #We investigate first the possible sizes of the Coarsest Grid
 #For that we start with any smallest combination fo prime numbers >= 4.
@@ -104,13 +104,14 @@ for nL in range(2,num_prime_factors_L-1):
             coarse_lat_2 = itertools.product(coarse_L,coarse_T)
             #print(nL, coarse_L)
             #print(nT, coarse_T)
-            for core in coarse_lat_2:
-                if core[0]<=core[1]:
-                    print("Possible number of cores:", core[0]*core[0]*core[0]*core[1])
+            #for core in coarse_lat_2:
+               # if core[0]<=core[1]:
+                    #print("Possible number of cores:", core[0]*core[0]*core[0]*core[1])
             for i in coarse_lat:
                 if i[0]<=i[1]:
                     L_coarse = i[0]
                     T_coarse = i[1]
+                    print("Possible number of cores:", i[0]*i[0]*i[0]*i[1])
                     print("Making directory:{}c{}".format(L_coarse,T_coarse))
                     path = "{}c{}".format(L_coarse,T_coarse)
                     os.makedirs(path, exist_ok=True)
