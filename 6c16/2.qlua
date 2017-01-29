@@ -1,4 +1,4 @@
-package.path = '/global/homes/s/srijitp/spaul/build2/parts/qlua/tree/lhpc/?.qlua;/global/homes/s/srijitp/spaul/build2/parts/qlua/tree/qlib/?.qlua;' .. package.path
+package.path = '/global/homes/s/srijitp/build2/parts/qlua/tree/lhpc/?.qlua;/global/homes/s/srijitp/build2/parts/qlua/tree/qlib/?.qlua;' .. package.path
 require "stdlib"
 require "setup_util"
 require "gauge"
