@@ -14,8 +14,8 @@ dims = {32, 32, 32, 48}
 -- Lattice init
 L = qcd.lattice(dims) 
 
-block ={4, 4, 4, 2}
-block_1 ={2, 2, 2, 2}
+block ={4, 4, 4, 4}
+block_1 ={3.0, 3.0, 3.0, 2}
 
 
 -- Get number of dims

@@ -14,7 +14,7 @@ dims = {32, 32, 32, 48}
 -- Lattice init
 L = qcd.lattice(dims) 
 
-block ={2, 2, 2, 2}
+block ={3.0, 3.0, 3.0, 4}
 block_1 ={2, 2, 2, 2}
 
 

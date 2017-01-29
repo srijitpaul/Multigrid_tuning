@@ -1,0 +1,350 @@
+package.path = '/global/homes/s/srijitp/build/qlua-build-KNL-2017/build2/parts/qlua/tree/lhpc/?.qlua;/global/homes/s/srijitp/build/qlua-build-KNL-2017/build2/parts/qlua/tree/qlib/?.qlua;' .. package.path
+require "stdlib"
+require "setup_util"
+require "gauge"
+require "lhpc-std"
+require "qdpc_io"
+require "latvec"
+require "ape-smear"
+require "wuppertal-smear"
+require "hex-smear"
+
+-- Dimensions
+dims = {32, 32, 32, 48}
+-- Lattice init
+L = qcd.lattice(dims) 
+
+block ={3.0, 3.0, 3.0, 8}
+block_1 ={4, 4, 4, 3.0}
+
+
+-- Get number of dims
+Nd = #L
+
+max_error = 1e-8
+
+
+function vec_div(a,b)
+   local r = {};
+   local i;
+   for i = 1, #a do
+     r[i] = a[i] / b[i];
+   end
+   return r;
+end
+
+--nconf = 1800
+--conf_name = "/global/project/projectdirs/mp133/koutsou/cl21_32_96_b6p1_m0p2850_m0p2450_cfg_1424_Stout_smeared.nersc"
+conf_name = "/global/cscratch1/sd/smeinel/BMW/beta3.31_2hex_32c48_ml-0.09530_mh-0.04/lat_130113_151609.nersc"
+-- read configuration
+--printf("Starting to read config.\n")
+--conf_name_prefix = "/global/cscratch1/sd/smeinel/clover-iso/cl21_48_96_b6p3_m0p2416_m0p2050/cfgs/cl21_48_96_b6p3_m0p2416_m0p2050_cfg_"
+--conf_suffix = ".lime"
+--conf_name = string.format("%s%d%s", conf_name_prefix, nconf, conf_suffix)
+--uorig, msg = qcd.nersc.read_gauge(L, conf_name)
+uorig = load_nersc(L, conf_name)
+--stout_rho = 0.125
+--stout_n   = 1
+
+--u = stout_smear_4d(uorig, stout_rho, stout_n)
+u = bmw_hex(uorig, 2)
+-- Print plaquette
+--printf(" Plaquette = %12.10f\n", plaquette_full(u))
+
+-- timer
+function timer(name)
+   local t0 = os.time()
+   return function(x)
+                         local t1 = os.time()
+                         printf("TIME(%s,%s)= %.6f seconds\n", name, x, t1 - t0)
+                  end
+end
+
+-- quark action
+ferm_bc = {1,1,1,-1}
+m_l = -0.09530
+m_s = -0.0400
+c_sw = 1.0
+kappa_l = 1. / (8 + 2 * m_l)
+
+-- Kappa - the bare mass
+kappa =  kappa_l
+
+-- c_sw - the clover parameter
+
+-------------------------------------------------------------------------------
+lattice_1 = vec_div(dims,block)
+lattice_2 = vec_div(lattice_1,block_1)
+
+
+
+-------- multigrid parameters
+  mg_params = {
+      name = "mg-wilson-test", -- optional for tostring()
+      verbose = -2, -- for -2
+      --nlevels = 2,
+      residual = {
+        rsqmin = 1e-22
+      
+      },
+      inverter = {
+         max_iter = 2000,
+         restart = 202,
+         max_restarts =5,
+         evenodd = "evenodd" -- or "odd" or "even"
+      },
+      -- boundary conditions Periodic
+      action = { -- should be together with kappas, but it's not how it is done in examples
+        boundary = ferm_bc,
+        kappa = kappa,
+        c_sw = c_sw,
+
+      };action,
+      global = { -- for -1
+        -- nlevels = 2,    
+         -- nc is U[1]:colors()
+         verbose = -2,
+         profile = 1,
+         kappa = kappa,
+         kappanv = kappa,
+         itmax = 5000,
+         ngcr = 8,
+      },
+      multigrid = { -- start with 1
+         { lattice = lattice_1,
+           --lattice1 = lattice,
+           -- verbose
+           nvecs = 24,
+           npre =  0,
+           npost =  4,
+           scale = 1,
+           cres = 0.2,
+           itmax = 50,
+           ngcr = 8,
+           setup_res =  0.4,
+           setup_maxit = 100;
+           setup_change_fac = 0.5
+           --- setup_nvecs
+        },
+         { lattice = lattice_2,
+           -- verbose
+           nvecs = 30,
+           npre =  0,
+           npost =  3,
+           scale = 1,
+           cres = 0.2,
+           itmax = 50,
+           ngcr = 8,
+           setup_res =  0.4,
+           setup_maxit = 100;
+           setup_change_fac = 0.5
+           --- setup_nvecs
+        },
+
+       --[[ { lattice = lattice_3,
+            --verbose
+           nvecs = 9,
+           npre =  0,
+           npost =  4,
+           scale = 1,
+           cres = 0.2,
+           itmax = 50,
+           ngcr = 8,
+           setup_res =  0.4,
+           setup_maxit = 100;
+           setup_change_fac = 0.5
+           --- setup_nvecs
+       },]]
+
+
+      }
+   };
+  local t2 = timer("set up mg solver")
+
+  printf("-------------------- creating wilson MG----------\n");
+  mg = qcd.qop.WilsonMG(u, mg_params);
+ 
+  
+t2("done")
+printf("-------------------- the solver object ----------\n");
+show_object("MG solver", mg);
+printf("-------------------- the solver's lattice -------\n");
+show_object("  mg.lattice", mg.lattice);
+printf("-------------------- solver's Nc ----------------\n");
+show_object("  mg:colors()", mg:colors());
+printf("-------------------- solver information ---------\n");
+show_object("MG info", mg:info());
+printf("-------------------- default inverter values ----\n");
+show_object("default inverter", mg:inverter());
+t_avg = 0
+t_dev = 0
+
+
+function clover_term_all(U)	
+  local L = U[1].lattice	
+  assert(#L == #U)	
+  local res = {}	
+  for i = 0, #L - 1 do	
+    res[1+i] = {}	
+    res[1+i][1+i] = L:ColorMatrix()	
+    for j = 0, i - 1 do	
+      res[1+i][1+j] = clover_term(U, i, j)	
+      res[1+j][1+i] = -res[1+i][1+j]	
+    end	
+  end	
+  return res	
+end
+
+function latvec_lattice(v, L)
+ -- check that all objects in latvec has the same lattice type v
+-- L is nil, extract it from v	
+  -- return the lattice object	
+  if 'table' == type(v) then	
+    if #v <= 0 then return nil end	
+    for i = 0, #v-1 do 	
+      -- skip empty sub-tables	
+      if 'table' ~= type(v[1+i]) or 0 < #v[1+i] then 	
+        local this_L = latvec_lattice(v[1+i], L)	
+        L = L or this_L	
+        assert(this_L == L)	
+      end	
+    end	
+    return L	
+  else	
+    return v.lattice	
+  end	
+end
+
+function latvec_adjoin(v)
+  if 'table' == type(v) then	
+    local c = {}	
+    for i = 0, #v-1 do	
+      c[1+i] = latvec_adjoin(v[1+i])	
+    end	
+    return c	
+  else 
+	return v:adjoin() 
+  end	
+end
+	
+		
+function latvec_op_clover(d, g_clover, is_dag)	
+  -- compute sum_{mu,nu} i*gamma{mu}*gamma{nu}*g[mu][nu]	
+
+  --  g   table : [mu][nu] -> cloverG{mu,nu}	
+  local L = latvec_lattice(g_clover)	
+  latvec_lattice(d)	
+  if is_dag then g_clover = latvec_adjoin(g_clover) end	
+  local res = latvec_zeros_like(d)	
+  for i = 0, #L-1 do	
+    for j = 0, #L - 1 do	
+      if i ~= j then	
+        local s_ij = complex(0,1) * gamma({mu=i}) * gamma({mu=j})	
+        res = latvec_scalsum_left(	
+                      1,    res,	
+                      s_ij, latvec_scal_left(g_clover[1+i][1+j], d))	
+      end	
+    end
+
+  end	
+  return res
+end
+
+
+
+function latvec_op_wilson_clover(d, u, Mw, c_sw, g_clover, is_dag)
+  local L = latvec_lattice(u)	
+  g_clover = g_clover or clover_term_all(u)	
+  latvec_lattice(g_clover)	
+  latvec_lattice(d)	
+  return latvec_scalsum_left(	
+            4. + Mw,  d,	
+            -1.,      latvec_op_xwilson(d, u, is_dag),	
+            -c_sw/4., latvec_op_clover(d, g_clover, is_dag))	
+end
+
+
+
+do
+  local U_bc = latvec_copy(u)
+  gauge_apply_boundary(U_bc, ferm_bc)
+  local U_clov = clover_term_all(U_bc)
+  function wilson_dslash_ref(x, is_dag)
+    return latvec_op_wilson_clover(x, U_bc, m_l, c_sw, U_clov, is_dag)
+  end
+end
+
+
+
+k_prop = L:DiracPropagator()
+x = 0
+y = 0
+z = 0
+t = 0
+
+wup_alpha = 3.0
+wup_n = 30
+
+ape_alpha = 2.5
+ape_n = 25
+
+ape_accu    = 1e-16
+ape_maxiter = 250
+ape_orthdir = 3
+
+uape = APE_smear(u, ape_alpha, ape_n, ape_accu, ape_maxiter, ape_orthdir)
+local src = L:DiracPropagator()
+for icol  = 0, 2 do
+
+      for ispin = 0, 3 do
+
+
+        local dv  = L:DiracFermion()
+        dv[{x,y,z,t, c=icol, d=ispin}] = complex(1, 0)
+        src[{c=icol,d=ispin}] = wuppertal_smear(uape, wup_alpha, wup_n, dv, 3)
+
+        end
+
+end
+
+
+for sp = 0, qcd.Ns-1 do
+   for col = 0, 3-1 do
+      
+
+  
+      	printf("-------------------- applying the MG solver -----\n");
+  	local t0 = os.time()
+  	G = mg:solve(src[{c=col, d=sp}]);
+        local t1 = os.time()
+   	printf("TIME(clover solver)= %.6f seconds\n", t1 - t0)
+
+   	t_avg = (t1 - t0) + t_avg;
+   	t_dev = (t1 - t0)*(t1 - t0) + t_dev;
+   	printf("------------------\n");
+	printf("--------------------\n");
+
+ 	-- t0("done")
+
+  	local test_src_ref = wilson_dslash_ref(2*kappa*G)
+  	print_latvec_cmp(src[{c=col, d=sp}], test_src_ref, "x <->DslashRef(MGsolver(x))")
+  	nr2 = (G):norm2();
+  	gf2 = (test_src_ref - src[{c=col, d=sp}]):norm2();
+  	f2 = src[{c=col, d=sp}]:norm2();
+  	delta = gf2 / f2;
+  	--printf("WMG error\n");
+  	printf("   |G|       = %g\n", nr2);
+  	--printf("   |G-src|     = %g\n", gf2);
+  	printf("   |G-src|/|src| = %g\n", delta);
+  	if (delta > max_error) then
+     		printf("***** Error too large\n")
+     		os.exit(1)
+  	else
+     		printf("DONE OK\n");
+  	end
+
+   	k_prop[{d=sp, c=col}] = G
+   end 
+end
+printf(" Average time per inversion = %g\n",t_avg/12);
+printf(" Deviation for Average  = %g\n",((t_dev/12)-((t_avg/12)*(t_avg/12)))^0.5);

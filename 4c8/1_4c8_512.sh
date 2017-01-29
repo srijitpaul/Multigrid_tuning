@@ -2,13 +2,13 @@
 
 
 #SBATCH -p debug
-#SBATCH -N 8
-#SBATCH -C knl,quad,cache
+#SBATCH -N 22
 #SBATCH -t 30:00
-#SBATCH -J 512_4c8_knl_mg 
+
+#SBATCH -J 512_4c8_edison_mg 
 #SBATCH -o 1_4c8_512.out 
 #SBATCH -e 1_4c8_512.err 
 
 
-srun -n 512  ./qlua_cori  plaquette.qlua load_gauge_field.qlua stout_smear.qlua 1.qlua 
+srun -n 512  ./qlua_edison  plaquette.qlua load_gauge_field.qlua stout_smear.qlua 1.qlua 
 

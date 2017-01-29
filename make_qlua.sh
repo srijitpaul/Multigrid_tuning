@@ -16,5 +16,9 @@ sed '17s/.*/block ={'$block_0_L', '$block_0_L', '$block_0_L', '$block_0_T'}/' du
 sed '18s/.*/block_1 ={'$block_1_L', '$block_1_L', '$block_1_L', '$block_1_T'}/' test1.qlua > test2.qlua
 
 cp test2.qlua $filelocation/$filename.qlua
+cp load_gauge_field.qlua $filelocation/.
+cp plaquette.qlua $filelocation/.
+cp stout_smear.qlua $filelocation/.
+cp qlua_edison $filelocation/.
 rm test1.qlua
 rm test2.qlua
