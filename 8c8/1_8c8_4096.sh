@@ -2,7 +2,7 @@
 
 
 #SBATCH -p debug
-#SBATCH -N 128
+#SBATCH -N 64
 #SBATCH -C knl,quad,cache
 #SBATCH -t 30:00
 #SBATCH -J 4096_8c8_knl_mg 
