@@ -2,13 +2,13 @@
 
 
 #SBATCH -p debug
-#SBATCH -N 4
-#SBATCH -C knl,quad,cache
+#SBATCH -N 8
+#SBATCH -C haswell
 #SBATCH -t 30:00
-#SBATCH -J 256_4c4_knl_mg 
+#SBATCH -J 256_4c4_haswell_mg 
 #SBATCH -o 1_4c4_256.out 
 #SBATCH -e 1_4c4_256.err 
 
 
-srun -n 256  ./qlua_knl_cori  plaquette.qlua load_gauge_field.qlua stout_smear.qlua 1.qlua 
+srun -n 256  ./qlua_cori  plaquette.qlua load_gauge_field.qlua stout_smear.qlua 1.qlua 
 
