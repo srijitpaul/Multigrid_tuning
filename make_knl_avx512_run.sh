@@ -12,7 +12,7 @@ sed '5s/.*/#SBATCH -N '$nodes'/' mg_knl.sh > $filelocation/node.sh
 sed '8s/.*/#SBATCH -J '$cores'_'$filelocation'_knl_mg /' $filelocation/node.sh > $filelocation/job_name.sh
 sed '9s/.*/#SBATCH -o '$qlua_filename'_'$filelocation'_'$cores'.out /' $filelocation/job_name.sh > $filelocation/out.sh
 sed '10s/.*/#SBATCH -e '$qlua_filename'_'$filelocation'_'$cores'.err /' $filelocation/out.sh > $filelocation/err.sh
-sed '13s#.*#srun -n '$cores'  ./qlua_knl_cori  plaquette.qlua load_gauge_field.qlua stout_smear.qlua '$qlua_filename'.qlua #' $filelocation/err.sh > $filelocation/${qlua_filename}_${filelocation}_${cores}.sh
+sed '13s#.*#srun -n '$cores'  ./qlua_avx512_cori  plaquette.qlua load_gauge_field.qlua stout_smear.qlua '$qlua_filename'.qlua #' $filelocation/err.sh > $filelocation/${qlua_filename}_${filelocation}_${cores}.sh
 rm $filelocation/node.sh
 rm $filelocation/job_name.sh
 rm $filelocation/out.sh
