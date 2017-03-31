@@ -19,6 +19,6 @@ cp test2.qlua $filelocation/$filename.qlua
 cp load_gauge_field.qlua $filelocation/.
 cp plaquette.qlua $filelocation/.
 cp stout_smear.qlua $filelocation/.
-cp qlua_edison $filelocation/.
+
 rm test1.qlua
 rm test2.qlua

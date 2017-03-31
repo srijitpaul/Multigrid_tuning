@@ -17,3 +17,4 @@ rm $filelocation/node.sh
 rm $filelocation/job_name.sh
 rm $filelocation/out.sh
 rm $filelocation/err.sh
+cp qlua_knl_cori $filelocation/.
