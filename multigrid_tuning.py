@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 import numpy as np
 import sys
@@ -12,7 +12,7 @@ import os
 import subprocess
 
 
-# In[3]:
+# In[2]:
 
 def primes(n):
     primfac = []
@@ -71,28 +71,31 @@ def sorted_k_partitions(seq, k):
 
 
 
-# In[4]:
+# In[20]:
 
 #Lattice size patameters
 L = 48
 T = 96
-cores_per_node = 24
+cores_per_node = 64
+host_name = "knl"
+feature = "avx512"
 
 
-# In[5]:
+# In[21]:
 
 prime_factors_L = primes(L)
 prime_factors_T = primes(T)
 num_prime_factors_L = len(prime_factors_L)
 num_prime_factors_T = len(prime_factors_T)
-print(num_prime_factors_L)
-print(num_prime_factors_T)
+print("Number of prime factors of L",num_prime_factors_L)
+print("Number of prime factors of T",num_prime_factors_T)
 
 
-# In[9]:
+# In[23]:
 
 #We investigate first the possible sizes of the Coarsest Grid
 #For that we start with any smallest combination fo prime numbers >= 4.
+subprocess.call("rm -r */", shell=True)
 for nL in range(2,num_prime_factors_L-1):
     for nT in range(2,num_prime_factors_T-1):
         if nL<=nT:
@@ -147,7 +150,7 @@ for nL in range(2,num_prime_factors_L-1):
                                 subprocess.call(bashcall, shell=True)
                                 runfile_counter = "{}_{}_{}.sh".format(filename_counter,path,i[0]*i[0]*i[0]*i[1])
                                 num_nodes = np.int(np.ceil((i[0]*i[0]*i[0]*i[1])/cores_per_node))
-                                runbashcall = "./make_edison_run.sh {} {} {} {}".format(path, filename_counter, num_nodes,i[0]*i[0]*i[0]*i[1])
+                                runbashcall = "./make_{}_{}_run.sh {} {} {} {}".format(host_name, feature, path, filename_counter, num_nodes,i[0]*i[0]*i[0]*i[1])
                                 subprocess.call(runbashcall, shell=True)
                                 filename_counter = filename_counter + 1
                                 print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")

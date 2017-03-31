@@ -1,0 +1,5 @@
+L = 48                                                                          
+T = 96                                                                          
+cores_per_node = 64                                                             
+host_name = "knl"                                                               
+feature = "avx512" 
