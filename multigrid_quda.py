@@ -292,6 +292,10 @@ for node in range(min_nodes, max_nodes+1):
                     print("Block_0 size :", block_0[j])
                     print("Block_1 size :", block_1[j])
                  
+                    name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                                                                                       block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
+                                                                                           block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
+                    
                     filename="{}/mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
                                                                                        block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
                                                                                            block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
@@ -342,7 +346,7 @@ echo $RUN_COMMAND
 eval $RUN_COMMAND
 echo `date`
 echo "Finished job"
-                        '''.format(node, totalGPUs, gpu_per_node, filename, filename, gpu_per_node, ensemble, filename,
+                        '''.format(node, totalGPUs, gpu_per_node, name, name, gpu_per_node, ensemble, name,
                                   eff_grid[0], eff_grid[1], eff_grid[2], eff_grid[3], igrid[0], igrid[1], igrid[2], igrid[3], test_conf,
                                   block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
                                   block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3]))
