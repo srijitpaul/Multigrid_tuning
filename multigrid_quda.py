@@ -108,7 +108,7 @@ print("Number of prime factors of effective T", T/gpu_per_node, num_prime_factor
 print(prime_factors_T)
 
 
-# In[5]:
+# In[7]:
 
 
 min_nodes = 1
@@ -292,7 +292,7 @@ for node in range(min_nodes, max_nodes+1):
                     print("Block_0 size :", block_0[j])
                     print("Block_1 size :", block_1[j])
                  
-                    name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                    name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
                                                                                        block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
                                                                                            block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
                     
