@@ -92,6 +92,7 @@ feature = "quda"
 gpu_per_node = 4
 test_conf="/p/scratch/lqcdm2020/C101/configs/C101r014n1.lime"
 ensemble="C101"
+multigrid_levels = 2
 print(is_prime(gpu_per_node))
 
 
@@ -108,7 +109,7 @@ print("Number of prime factors of effective T", T/gpu_per_node, num_prime_factor
 print(prime_factors_T)
 
 
-# In[7]:
+# In[8]:
 
 
 min_nodes = 1
@@ -201,10 +202,7 @@ for node in range(min_nodes, max_nodes+1):
             #print(coarsegrids)
             for icoarsegrid in coarsegrids:
                 
-                #Outer
-                block_0 = np.empty(shape=(1,4), dtype=int)
-                #Inner
-                block_1 = np.empty(shape=(1,4), dtype=int)
+
                 print(icoarsegrid)
                 print("Making subdirectory : {}node{}GPU/part_{}_{}_{}_{}/coarse_{}_{}_{}_{}".format(node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3],
                                                                                                      icoarsegrid[0], icoarsegrid[1], icoarsegrid[2], icoarsegrid[3]))
@@ -212,96 +210,163 @@ for node in range(min_nodes, max_nodes+1):
                                                                                                      icoarsegrid[0], icoarsegrid[1], icoarsegrid[2], icoarsegrid[3])
                 os.makedirs(path, exist_ok=True)
                 ## grid which needs to be factorized n times for n level multigrid
-                factor_grid = eff_grid/icoarsegrid
+                factor_grid = (eff_grid/icoarsegrid)
+                factor_grid = factor_grid.astype(int)
                 print(factor_grid)
-                if(factor_grid[0] == factor_grid[1] and factor_grid[1] == factor_grid[2]):
-                    L_pfac = primes(factor_grid[0])
-                    T_pfac = primes(factor_grid[3])
-                    for L_partitions in sorted_k_partitions(L_pfac, 2):
-                        for T_partitions in sorted_k_partitions(T_pfac, 2):
-                            L_blocks = [functools.reduce(operator.mul, item, 1) for item in L_partitions]
-                            T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
-                            
-                            block_0 = np.vstack((block_0, [L_blocks[1], L_blocks[1], L_blocks[1], T_blocks[1]]))
-                            block_1 = np.vstack((block_1, [L_blocks[0], L_blocks[0], L_blocks[0], T_blocks[0]]))
-
-                              
-                #Any two would be equal
                 
-                elif(factor_grid[0] == factor_grid[1]):
-                    L1_grid = factor_grid[0]
-                    L2_grid = factor_grid[2]
-                    L1_pfac = primes(L1_grid)
-                    L2_pfac = primes(L2_grid)
-                    T_pfac = primes(factor_grid[3])
-                    for L1_partitions in sorted_k_partitions(L1_pfac, 2):
-                        for L2_partitions in sorted_k_partitions(L2_pfac, 2):
-                            for T_partitions in sorted_k_partitions(T_pfac, 2):
-                                L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
-                                L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
-                                T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
-                                #print("P", L1_blocks, L2_blocks, T_blocks)
-                                
-                                block_0 = np.vstack((block_0, [L1_blocks[1], L1_blocks[1], L2_blocks[1], T_blocks[1]]))
-                                block_1 = np.vstack((block_1, [L1_blocks[0], L1_blocks[0], L2_blocks[0], T_blocks[0]]))
-                                
-
-                elif(factor_grid[0] == factor_grid[2]):
-                    L1_grid = factor_grid[0]
-                    L2_grid = factor_grid[1]
-                    L1_pfac = primes(L1_grid)
-                    L2_pfac = primes(L2_grid)
-                    T_pfac = primes(factor_grid[3])
-                    for L1_partitions in sorted_k_partitions(L1_pfac, 2):
-                        for L2_partitions in sorted_k_partitions(L2_pfac, 2):
-                            for T_partitions in sorted_k_partitions(T_pfac, 2):
-                                L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
-                                L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
-                                T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
-                                #print("P", L1_blocks, L2_blocks, T_blocks)
-                                
-                                block_0 = np.vstack((block_0, [L1_blocks[1], L2_blocks[1], L1_blocks[1], T_blocks[1]]))
-                                block_1 = np.vstack((block_1, [L1_blocks[0], L2_blocks[0], L1_blocks[0], T_blocks[0]]))
-                                
-                elif(factor_grid[2] == factor_grid[1]):
-                    L1_grid = factor_grid[0]
-                    L2_grid = factor_grid[2]
-                    L1_pfac = primes(L1_grid)
-                    L2_pfac = primes(L2_grid)
-                    T_pfac = primes(factor_grid[3])
-                    for L1_partitions in sorted_k_partitions(L1_pfac, 2):
-                        for L2_partitions in sorted_k_partitions(L2_pfac, 2):
-                            for T_partitions in sorted_k_partitions(T_pfac, 2):
-                                L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
-                                L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
-                                T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
-                                #print("P", L1_blocks, L2_blocks, T_blocks)
-                                
-                                block_0 = np.vstack((block_0, [L1_blocks[1], L2_blocks[1], L2_blocks[1], T_blocks[1]]))
-                                block_1 = np.vstack((block_1, [L1_blocks[0], L2_blocks[0], L2_blocks[0], T_blocks[0]]))
-                else:
-                    print("Dont try this partition")
+                if(multigrid_levels == 2):
                     
-                block_0 = np.delete(block_0, 0, axis=0)
-                block_1 = np.delete(block_1, 0, axis=0)
-                #b_size = np.hstack((block_0, block_1))
-                block_0 = block_0.astype(int)
-                block_1 = block_1.astype(int)
-                #print("P", b_size)
-                for j in range(0,len(block_0)):
-                    print("Block_0 size :", block_0[j])
-                    print("Block_1 size :", block_1[j])
-                 
-                    name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
-                                                                                       block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
-                                                                                           block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
                     
-                    filename="{}/mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
-                                                                                       block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
-                                                                                           block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
+                    name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}".format(node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                                                                        factor_grid[0], factor_grid[1], factor_grid[2], factor_grid[3])
+                                            
+                    filename="{}/mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                                                                               factor_grid[0], factor_grid[1], factor_grid[2], factor_grid[3])
+                    
                     print(filename)
                     with open (filename+".sh", 'w') as rsh:
                         rsh.write('''#!/bin/bash -x
+#SBATCH --account=lqcdm2020
+#SBATCH --nodes={}
+#SBATCH --ntasks={}
+#SBATCH --ntasks-per-node={}
+#SBATCH --output={}.out
+#SBATCH --error={}.err
+#SBATCH --time=01:00:00
+#SBATCH --partition=gpus
+
+#SBATCH --gres=gpu:{}
+
+##Modules needed
+module restore gnu_module
+
+##Ensemble
+ENSEMBLE="{}"
+
+##Tuning directory
+TUNE_DIR=$PWD/tuning/{}
+mkdir -p $TUNE_DIR
+export QUDA_RESOURCE_PATH=$TUNE_DIR
+
+##MG PARAMS
+export META="--verbosity verbose --dim {} {} {} {} --gridsize {} {} {} {} --kappa 0.13675962  --dslash-type wilson --solve-type direct-pc --load-gauge {}"
+export SOLVER_PARAM="--precon-type mr --inv-type gcr --prec double --prec-sloppy single --prec-precondition single --recon 12 --recon-sloppy 12 --tol 1e-12"
+export MG_PARAM="--mg-levels 3 --mg-generate-nullspace false --mg-save-vec 1 /tmp/null"
+export LEVEL0_PARAM="--mg-nu-pre 0 0 --mg-nu-post 0 2 --mg-block-size 0 {} {} {} {} --mg-nvec 0 6 --mg-setup-inv 0 cg --mg-smoother 0 ca-gcr"
+export LEVEL1_PARAM="--mg-coarse-solver 2 ca-gcr --mg-coarse-solver-maxiter 2 10"
+
+##EXECUTABLE_DIR
+EXECUTABLE=/p/project/lqcdm2020/build/external/test/old_quda/tests/multigrid_invert_test
+
+##RUN_COMMAND
+CHECK_COMMAND="srun env | grep CUDA"
+RUN_COMMAND="srun $EXECUTABLE $META $SOLVER_PARAM $MG_PARAM $LEVEL0_PARAM $LEVEL1_PARAM $LEVEL2_PARAM"
+
+echo "Starting job"
+echo `date`
+echo $RUN_COMMAND
+#eval $CHECK_COMMAND
+eval $RUN_COMMAND
+echo `date`
+echo "Finished job"
+                        '''.format(node, totalGPUs, gpu_per_node, name, name, gpu_per_node, ensemble, name,
+                                   eff_grid[0], eff_grid[1], eff_grid[2], eff_grid[3], igrid[0], igrid[1], igrid[2], igrid[3], test_conf,
+                                   factor_grid[0], factor_grid[1], factor_grid[2], factor_grid[3]))
+                    
+                if(multigrid_levels == 3):
+                    
+                    #Outer
+                    block_0 = np.empty(shape=(1,4), dtype=int)
+                    #Inner
+                    block_1 = np.empty(shape=(1,4), dtype=int)
+                    if(factor_grid[0] == factor_grid[1] and factor_grid[1] == factor_grid[2]):
+                        L_pfac = primes(factor_grid[0])
+                        T_pfac = primes(factor_grid[3])
+                        for L_partitions in sorted_k_partitions(L_pfac, 2):
+                            for T_partitions in sorted_k_partitions(T_pfac, 2):
+                                L_blocks = [functools.reduce(operator.mul, item, 1) for item in L_partitions]
+                                T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
+
+                                block_0 = np.vstack((block_0, [L_blocks[1], L_blocks[1], L_blocks[1], T_blocks[1]]))
+                                block_1 = np.vstack((block_1, [L_blocks[0], L_blocks[0], L_blocks[0], T_blocks[0]]))
+
+
+                    #Any two would be equal
+
+                    elif(factor_grid[0] == factor_grid[1]):
+                        L1_grid = factor_grid[0]
+                        L2_grid = factor_grid[2]
+                        L1_pfac = primes(L1_grid)
+                        L2_pfac = primes(L2_grid)
+                        T_pfac = primes(factor_grid[3])
+                        for L1_partitions in sorted_k_partitions(L1_pfac, 2):
+                            for L2_partitions in sorted_k_partitions(L2_pfac, 2):
+                                for T_partitions in sorted_k_partitions(T_pfac, 2):
+                                    L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
+                                    L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
+                                    T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
+                                    #print("P", L1_blocks, L2_blocks, T_blocks)
+
+                                    block_0 = np.vstack((block_0, [L1_blocks[1], L1_blocks[1], L2_blocks[1], T_blocks[1]]))
+                                    block_1 = np.vstack((block_1, [L1_blocks[0], L1_blocks[0], L2_blocks[0], T_blocks[0]]))
+
+
+                    elif(factor_grid[0] == factor_grid[2]):
+                        L1_grid = factor_grid[0]
+                        L2_grid = factor_grid[1]
+                        L1_pfac = primes(L1_grid)
+                        L2_pfac = primes(L2_grid)
+                        T_pfac = primes(factor_grid[3])
+                        for L1_partitions in sorted_k_partitions(L1_pfac, 2):
+                            for L2_partitions in sorted_k_partitions(L2_pfac, 2):
+                                for T_partitions in sorted_k_partitions(T_pfac, 2):
+                                    L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
+                                    L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
+                                    T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
+                                    #print("P", L1_blocks, L2_blocks, T_blocks)
+
+                                    block_0 = np.vstack((block_0, [L1_blocks[1], L2_blocks[1], L1_blocks[1], T_blocks[1]]))
+                                    block_1 = np.vstack((block_1, [L1_blocks[0], L2_blocks[0], L1_blocks[0], T_blocks[0]]))
+
+                    elif(factor_grid[2] == factor_grid[1]):
+                        L1_grid = factor_grid[0]
+                        L2_grid = factor_grid[2]
+                        L1_pfac = primes(L1_grid)
+                        L2_pfac = primes(L2_grid)
+                        T_pfac = primes(factor_grid[3])
+                        for L1_partitions in sorted_k_partitions(L1_pfac, 2):
+                            for L2_partitions in sorted_k_partitions(L2_pfac, 2):
+                                for T_partitions in sorted_k_partitions(T_pfac, 2):
+                                    L1_blocks = [functools.reduce(operator.mul, item, 1) for item in L1_partitions]
+                                    L2_blocks = [functools.reduce(operator.mul, item, 1) for item in L2_partitions]
+                                    T_blocks = [functools.reduce(operator.mul, item, 1) for item in T_partitions]
+                                    #print("P", L1_blocks, L2_blocks, T_blocks)
+
+                                    block_0 = np.vstack((block_0, [L1_blocks[1], L2_blocks[1], L2_blocks[1], T_blocks[1]]))
+                                    block_1 = np.vstack((block_1, [L1_blocks[0], L2_blocks[0], L2_blocks[0], T_blocks[0]]))
+                    else:
+                        print("Dont try this partition")
+
+                    block_0 = np.delete(block_0, 0, axis=0)
+                    block_1 = np.delete(block_1, 0, axis=0)
+                    #b_size = np.hstack((block_0, block_1))
+                    block_0 = block_0.astype(int)
+                    block_1 = block_1.astype(int)
+                    #print("P", b_size)
+                    for j in range(0,len(block_0)):
+                        print("Block_0 size :", block_0[j])
+                        print("Block_1 size :", block_1[j])
+
+                        name="mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                                                                                           block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
+                                                                                               block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
+
+                        filename="{}/mg_N{}_{}gpu_{}-{}-{}-{}__{}_{}_{}_{}__{}_{}_{}_{}".format(path, node, totalGPUs, igrid[0], igrid[1], igrid[2], igrid[3], 
+                                                                                           block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
+                                                                                               block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3])
+                        print(filename)
+                        with open (filename+".sh", 'w') as rsh:
+                            rsh.write('''#!/bin/bash -x
 #SBATCH --account=lqcdm2020
 #SBATCH --nodes={}
 #SBATCH --ntasks={}
@@ -346,10 +411,12 @@ echo $RUN_COMMAND
 eval $RUN_COMMAND
 echo `date`
 echo "Finished job"
-                        '''.format(node, totalGPUs, gpu_per_node, name, name, gpu_per_node, ensemble, name,
-                                  eff_grid[0], eff_grid[1], eff_grid[2], eff_grid[3], igrid[0], igrid[1], igrid[2], igrid[3], test_conf,
-                                  block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
-                                  block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3]))
+                            '''.format(node, totalGPUs, gpu_per_node, name, name, gpu_per_node, ensemble, name,
+                                      eff_grid[0], eff_grid[1], eff_grid[2], eff_grid[3], igrid[0], igrid[1], igrid[2], igrid[3], test_conf,
+                                      block_0[j][0], block_0[j][1], block_0[j][2], block_0[j][3],
+                                      block_1[j][0], block_1[j][1], block_1[j][2], block_1[j][3]))
+                            
+                        
 
 
 # In[ ]:
